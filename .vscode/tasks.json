@@ -8,7 +8,7 @@
       "type": "process",
       "command": "bash",
       "args": [
-        "-c", "tweego -m src/scripts -w -o index.html src/game.twee",
+        "-c", "tweego -w -o index.html src/game.twee",
       ],
       "problemMatcher": [],
     },
