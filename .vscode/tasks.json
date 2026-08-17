@@ -1,0 +1,34 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "tweego:watch",
+      "type": "process",
+      "command": "bash",
+      "args": [
+        "-c", "tweego -m src/scripts -w -o index.html src/game.twee",
+      ],
+      "problemMatcher": [],
+    },
+    {
+      "label": "vite:watch",
+      "type": "process",
+      "command": "bash",
+      "args": [
+        "-c", "vite",
+      ],
+      "problemMatcher": [],
+    },
+    {
+      "label": "dev",
+      "dependsOn": [
+        "tweego:watch",
+        "vite:watch",
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+  ]
+}
