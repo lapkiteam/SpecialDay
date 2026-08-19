@@ -44,11 +44,15 @@ do
                 let f (htmlElement: HtmlElement) =
                     Option.builder {
                         do! if htmlElement.Tag <> "img" then None else Some ()
-                        let! src =
+                        let! _, srcValue =
                             htmlElement.Attributes
                             |> HtmlElementAttributes.tryFind "src"
-
-                        return src
+                        let! dataImage =
+                            match srcValue with
+                            | HtmlElementAttributeValue.DataImage dataImage ->
+                                Some dataImage
+                            | _ -> None
+                        return dataImage
                     }
 
                 Result.builder {
