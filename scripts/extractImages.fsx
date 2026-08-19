@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget: FSharpMyExt, 2.0.0-prerelease.11"
 #r "nuget: Twine.Twee.Fsharp, 0.5.0"
-#load "HtmlElement.fsx"
+#load "Twine.SugarCube.FSharp.fsx"
 open System.IO
 open FsharpMyExtension
 open FsharpMyExtension.Containers
@@ -9,7 +9,7 @@ open Twine.Twee.FSharp
 open Twine.Twee.FSharp.Parser
 open Twine.Twee.FSharp.Printer
 
-open Twine.SugarCube.FSharp.PassageBody
+open Twine.SugarCube.FSharp
 
 module Result =
     // refactor: use function from FsharpMyExtension (see https://github.com/gretmn102/FsharpMyExtension/issues/20)

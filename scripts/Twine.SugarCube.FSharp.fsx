@@ -1,5 +1,5 @@
 #r "nuget: FSharpMyExt, 2.0.0-prerelease.11"
-namespace Twine.SugarCube.FSharp.PassageBody
+namespace Twine.SugarCube.FSharp
 
 module ParserCommon =
     open FParsec
