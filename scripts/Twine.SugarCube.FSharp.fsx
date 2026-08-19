@@ -72,16 +72,17 @@ module DataImage =
                 Data = data
             })
 
-type HtmlElementAttribute = (string * string)
+[<RequireQualifiedAccess>]
+type HtmlElementAttributeValue =
+    | DataImage of DataImage
+    | Raw of string
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
-module HtmlElementAttribute =
+module HtmlElementAttributeValue =
     open FParsec
 
-    open ParserCommon
-
-    let pvalue: Parser<_, unit> =
+    let praw: Parser<_, unit> =
         let quote =
             between
                 (skipChar '"')
@@ -91,8 +92,21 @@ module HtmlElementAttribute =
             manySatisfy (isNoneOf " >")
         quote <|> raw
 
-    let parser: Parser<_, unit> =
-        tuple2 (ptag .>> skipChar '=') pvalue
+    let parser: Parser<HtmlElementAttributeValue, unit> =
+        (DataImage.parser |>> HtmlElementAttributeValue.DataImage)
+        <|> (praw |>> HtmlElementAttributeValue.Raw)
+
+type HtmlElementAttribute = (string * HtmlElementAttributeValue)
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+module HtmlElementAttribute =
+    open FParsec
+
+    open ParserCommon
+
+    let parser: Parser<HtmlElementAttribute, unit> =
+        tuple2 (ptag .>> skipChar '=') HtmlElementAttributeValue.parser
 
 type HtmlElementAttributes = HtmlElementAttribute list
 
@@ -105,7 +119,7 @@ module HtmlElementAttributes =
 
     open FParsec
 
-    let parser: Parser<_, unit> =
+    let parser: Parser<HtmlElementAttributes, unit> =
         many (HtmlElementAttribute.parser .>> spaces)
 
 type HtmlElement = {
