@@ -117,6 +117,12 @@ module HtmlElementAttributes =
         attributes
         |> List.tryFind (fun (k, v) -> k = key)
 
+    let set key newvalue (attributes: HtmlElementAttributes) =
+        attributes
+        |> List.map (fun (k, v) ->
+            k, if k <> key then v else newvalue
+        )
+
     open FParsec
 
     let parser: Parser<HtmlElementAttributes, unit> =

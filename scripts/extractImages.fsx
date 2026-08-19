@@ -22,12 +22,23 @@ module Option =
     let builder = Builder()
 
 module Result =
-    // refactor: use function from FsharpMyExtension (see https://github.com/gretmn102/FsharpMyExtension/issues/20)
+    // refactor: use `FsharpMyExtension.Containers.Result.defaultWith` (see https://github.com/gretmn102/FsharpMyExtension/issues/20)
     let defaultWith defThunk (result: Result<'T, 'Error>) =
         match result with
         | Ok x -> x
         | Error msg -> defThunk msg
 
+    // refactor: use `FsharpMyExtension.Containers.Result.ofOption` (see https://github.com/gretmn102/FsharpMyExtension/issues/22)
+    let ofOption error option =
+        match option with
+        | Some x -> Ok x
+        | None -> Error error
+
+    // refactor: use `FsharpMyExtension.Containers.Result.ofOptionWith` (see https://github.com/gretmn102/FsharpMyExtension/issues/22)
+    let ofOptionWith errorThunk option =
+        match option with
+        | Some x -> Ok x
+        | None -> Error (errorThunk ())
 
 do
     let input = "src/game.twee"
@@ -40,29 +51,40 @@ do
     let document =
         let mapPassageBody (passageBody: PassageBody) =
             passageBody
-            |> List.mapFold (fun line ->
-                let f (htmlElement: HtmlElement) =
-                    Option.builder {
-                        do! if htmlElement.Tag <> "img" then None else Some ()
-                        let! _, srcValue =
-                            htmlElement.Attributes
-                            |> HtmlElementAttributes.tryFind "src"
-                        let! dataImage =
-                            match srcValue with
-                            | HtmlElementAttributeValue.DataImage dataImage ->
-                                Some dataImage
-                            | _ -> None
-                        return dataImage
-                    }
+            |> List.mapFold
+                (fun (state: {| Id: int; DataImages: Map<int, DataImage> |}) line ->
+                    let getImage (htmlElement: HtmlElement) =
+                        Option.builder {
+                            do! if htmlElement.Tag <> "img" then None else Some ()
+                            let! _, srcValue =
+                                htmlElement.Attributes
+                                |> HtmlElementAttributes.tryFind "src"
+                            let! dataImage =
+                                match srcValue with
+                                | HtmlElementAttributeValue.DataImage dataImage ->
+                                    Some dataImage
+                                | _ -> None
+                            return dataImage
+                        }
+                    let result =
+                        Result.builder {
+                            let! htmlElement = HtmlElement.parse line
+                            match getImage htmlElement with
+                            | None -> return None
+                            | Some dataImage ->
+                                let newElement =
+                                    { htmlElement with
+                                        Attributes = HtmlElementAttributes.tryFind add
+                                    }
+                                {| state with
+                                    Id = state.Id + 1
+                                |}
 
-                Result.builder {
-                    let! src = HtmlElement.parse line
-                    if src.Tag <> "img" then
-                        ok
-                        todo
-                    return src
-                }
-            )
+                                return Some htmlElement
+                        }
+                    state
+                )
+                {| Id = 0; DataImages = Map.empty |}
 
         document
         |> List.map (fun passage ->
