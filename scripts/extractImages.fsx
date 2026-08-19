@@ -12,6 +12,7 @@ open Twine.Twee.FSharp.Printer
 open Twine.SugarCube.FSharp
 
 module Option =
+    // refactor: use function from FsharpMyExtension (see https://github.com/gretmn102/FsharpMyExtension/issues/21)
     type Builder() =
         member __.Bind(x, f) =
             Option.bind f x
