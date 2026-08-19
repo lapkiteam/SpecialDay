@@ -9,7 +9,7 @@ open Twine.Twee.FSharp
 open Twine.Twee.FSharp.Parser
 open Twine.Twee.FSharp.Printer
 
-open HtmlElement
+open Twine.SugarCube.FSharp.PassageBody
 
 module Result =
     // refactor: use function from FsharpMyExtension (see https://github.com/gretmn102/FsharpMyExtension/issues/20)
