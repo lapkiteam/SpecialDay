@@ -28,64 +28,6 @@ module Result =
         | Ok x -> x
         | Error msg -> defThunk msg
 
-[<RequireQualifiedAccess>]
-type DataImageFormat =
-    | Webp
-    | Png
-    | Jpeg
-    | Unknown of string
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-[<RequireQualifiedAccess>]
-module DataImageFormat =
-    open FParsec
-
-    let dic =
-        [
-            "webp", DataImageFormat.Webp
-            "png" , DataImageFormat.Png
-            "jpg" , DataImageFormat.Jpeg
-            "jpeg", DataImageFormat.Jpeg
-        ]
-
-    let parser: Parser<_, unit> =
-        let pcommon =
-            dic
-            |> Seq.sortByDescending (fun (rawName, _) -> rawName) // для жадности
-            |> Seq.map (fun (rawName, name) ->
-                pstringCI rawName >>% name
-            )
-            |> List.ofSeq
-            |> choice
-        let punknown =
-            manySatisfy (isNoneOf "\n\";") |>> DataImageFormat.Unknown
-        pcommon <|> punknown
-
-type DataImage = {
-    Format: DataImageFormat
-    /// in base64 format
-    Data: string
-}
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-[<RequireQualifiedAccess>]
-module DataImage =
-    open FParsec
-
-    let pimageFormat: Parser<_, unit> =
-        skipString "image" >>. skipChar '/'
-        >>. DataImageFormat.parser
-
-    // data:image/jpeg;base64,
-    let parser: Parser<_, unit> =
-        pipe2
-            (skipString "data" >>. skipChar ':'
-             >>. pimageFormat .>> skipChar ';')
-            (pstring "base64" >>. skipChar ',' >>. todo)
-            (fun imageFormat data -> {
-                Format = imageFormat
-                Data = data
-            })
 
 do
     let input = "src/game.twee"
