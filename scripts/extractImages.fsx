@@ -15,21 +15,22 @@ module Result =
         | Ok x -> x
         | Error msg -> defThunk msg
 
-type HtmlElement = {
-    Tag: string
-    Attributes: (string * string) list
-}
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-[<RequireQualifiedAccess>]
-module HtmlElementParser =
+module ParserCommon =
     open FParsec
-    open FsharpMyExtension.Serialization.Deserializers.FParsec
 
     let ptag : Parser<_, unit> =
         many1Satisfy (isNoneOf " \t\n")
 
-    let pattributeValue: Parser<_, unit> =
+type HtmlElementAttribute = (string * string)
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+module HtmlElementAttribute =
+    open FParsec
+
+    open ParserCommon
+
+    let pvalue: Parser<_, unit> =
         let quote =
             between
                 (skipChar '"')
@@ -39,8 +40,35 @@ module HtmlElementParser =
             manySatisfy (isNoneOf " >")
         quote <|> raw
 
-    let pattribute: Parser<_, unit> =
-        tuple2 (ptag .>> skipChar '=') pattributeValue
+    let parser: Parser<_, unit> =
+        tuple2 (ptag .>> skipChar '=') pvalue
+
+type HtmlElementAttributes = HtmlElementAttribute list
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+module HtmlElementAttributes =
+    let tryFind key (attributes: HtmlElementAttributes) =
+        attributes
+        |> List.tryFind (fun (k, v) -> k = key)
+
+    open FParsec
+
+    let parser: Parser<_, unit> =
+        many (HtmlElementAttribute.parser .>> spaces)
+
+type HtmlElement = {
+    Tag: string
+    Attributes: HtmlElementAttributes
+}
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+module HtmlElement =
+    open FParsec
+    open FsharpMyExtension.Serialization.Deserializers.FParsec
+
+    open ParserCommon
 
     let parser: Parser<_, unit> =
         between
@@ -48,7 +76,7 @@ module HtmlElementParser =
             (skipChar '>')
             (pipe2
                 (ptag .>> spaces)
-                (many (pattribute .>> spaces))
+                HtmlElementAttributes.parser
                 (fun tag attributes ->
                     {
                         Tag = tag
@@ -71,11 +99,18 @@ do
     let document =
         let mapPassageBody (passageBody: PassageBody) =
             passageBody
-            |> List.map (fun line ->
+            |> List.mapFold (fun line ->
+                let f (htmlElement: HtmlElement) =
+                    if htmlElement.Tag <> "img" then None
+                    else
+                        let src =
+                            htmlElement.Attributes
+                            |> HtmlElementAttributes.tryFind "src"
+                        sdf
                 Result.builder {
-                    let! src = HtmlElementParser.parse line
-                    if src.Tag = "img" then
-
+                    let! src = HtmlElement.parse line
+                    if src.Tag <> "img" then
+                        ok
                         todo
                     return src
                 }
