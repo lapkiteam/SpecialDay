@@ -55,12 +55,18 @@ module DataImage =
         skipString "image" >>. skipChar '/'
         >>. DataImageFormat.parser
 
-    // data:image/jpeg;base64,
+    let pbase64: Parser<_, unit> =
+        // https://base64.guru/learn/base64-characters
+        regex "[A-Za-z0-9+/]+={0,2}"
+
+    /// ```
+    /// data:image/jpeg;base64,
+    /// ```
     let parser: Parser<_, unit> =
         pipe2
             (skipString "data" >>. skipChar ':'
              >>. pimageFormat .>> skipChar ';')
-            (pstring "base64" >>. skipChar ',' >>. todo)
+            (pstring "base64" >>. skipChar ',' >>. pbase64)
             (fun imageFormat data -> {
                 Format = imageFormat
                 Data = data
