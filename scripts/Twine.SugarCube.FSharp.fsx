@@ -27,6 +27,21 @@ module DataImageFormat =
             "jpeg", DataImageFormat.Jpeg
         ]
 
+    let formatRaws =
+        dic
+        |> List.map (fun (k, v) -> v, k)
+        |> Map.ofList
+
+    let toString (format: DataImageFormat) =
+        match format with
+        | DataImageFormat.Unknown unknownFormat ->
+            unknownFormat
+        | _ ->
+            Map.tryFind format formatRaws
+            |> Option.defaultWith (fun () ->
+                sprintf "%A?" format
+            )
+
     let parser: Parser<_, unit> =
         let pcommon =
             dic

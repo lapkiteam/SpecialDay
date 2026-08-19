@@ -66,21 +66,24 @@ do
                                 | _ -> None
                             return dataImage
                         }
-                    let result =
+                    let newHtmlImgElement =
+                        let updateSrc dataImage htmlElement =
+                            let imagePath =
+                                let rawFormat = DataImageFormat.toString dataImage.Format
+                                $"%d{state.Id}.%s{rawFormat}"
+                            { htmlElement with
+                                Attributes =
+                                    htmlElement.Attributes
+                                    |> HtmlElementAttributes.set
+                                        "src"
+                                        (HtmlElementAttributeValue.Raw imagePath)
+                            }
                         Result.builder {
                             let! htmlElement = HtmlElement.parse line
                             match getImage htmlElement with
                             | None -> return None
                             | Some dataImage ->
-                                let newElement =
-                                    { htmlElement with
-                                        Attributes = HtmlElementAttributes.tryFind add
-                                    }
-                                {| state with
-                                    Id = state.Id + 1
-                                |}
-
-                                return Some htmlElement
+                                return Some (updateSrc dataImage htmlElement)
                         }
                     state
                 )
