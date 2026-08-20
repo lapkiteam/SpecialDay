@@ -190,7 +190,12 @@ module HtmlElement =
         between
             (showChar '<')
             (showChar '>')
-            (showString htmlElement.Tag << showSpace)
+            (showString htmlElement.Tag << (
+                match htmlElement.Attributes with
+                | [] -> id
+                | attributes ->
+                    showSpace << HtmlElementAttributes.show attributes
+            ))
 
     let toString htmlElement =
         let build = FsharpMyExtension.Serialization.Serializers.ShowList.show
