@@ -48,7 +48,7 @@ do
             failwithf "%A"
         )
 
-    let document =
+    let document, images =
         let newHtmlImgElement newImageId line =
             let getImage (htmlElement: HtmlElement) =
                 Option.builder {
@@ -123,9 +123,9 @@ do
         |> fun (document, result) ->
             (document: Document<_>), List.rev result.DataImages
 
-    let rawDocument =
-        document
-        |> Document.toString
-            PassageBody.shows
-            NewlineType.CrLf
-    File.WriteAllText(input, rawDocument)
+    document
+    |> Document.toString
+        PassageBody.shows
+        NewlineType.CrLf
+    |> fun rawDocument ->
+        File.WriteAllText(input, rawDocument)
