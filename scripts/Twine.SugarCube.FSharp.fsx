@@ -1,12 +1,6 @@
 #r "nuget: FSharpMyExt, 2.0.0-prerelease.11"
 namespace Twine.SugarCube.FSharp
 
-module ParserCommon =
-    open FParsec
-
-    let ptag : Parser<_, unit> =
-        many1Satisfy (isNoneOf " \t\n")
-
 [<RequireQualifiedAccess>]
 type DataImageFormat =
     | Webp
@@ -149,10 +143,11 @@ module HtmlElementAttribute =
 
     open FParsec
 
-    open ParserCommon
+    let pident : Parser<_, unit> =
+        many1Satisfy (isNoneOf " =>\t\n")
 
     let parser: Parser<HtmlElementAttribute, unit> =
-        tuple2 (ptag .>> skipChar '=') HtmlElementAttributeValue.parser
+        tuple2 (pident .>> skipChar '=') HtmlElementAttributeValue.parser
 
 type HtmlElementAttributes = HtmlElementAttribute list
 
@@ -204,7 +199,8 @@ module HtmlElement =
     open FParsec
     open FsharpMyExtension.Serialization.Deserializers.FParsec
 
-    open ParserCommon
+    let ptag : Parser<_, unit> =
+        many1Satisfy (isNoneOf " \t\n")
 
     let parser: Parser<_, unit> =
         between
