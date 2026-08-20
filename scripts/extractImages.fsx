@@ -91,7 +91,7 @@ do
                     |}
             }
 
-        let mapFoldPassageBody (passageBody: PassageBody) =
+        let mapFoldPassageBody state (passageBody: PassageBody) : (PassageBody * _) =
             passageBody
             |> List.mapFold
                 (fun (state: {| Id: int; DataImages: _ list |}) line ->
@@ -106,15 +106,22 @@ do
                         line, state
                     | _ -> line, state
                 )
-                {| Id = 0; DataImages = [] |}
+                state
 
         document
-        |> List.map (fun passage ->
-            { passage with
-                Body =
-                    mapFoldPassageBody passage.Body
-            }
-        )
+        |> List.mapFold
+            (fun state passage ->
+                let passageBody, state =
+                    mapFoldPassageBody state passage.Body
+                let passage =
+                    { passage with
+                        Body = passageBody
+                    }
+                passage, state
+            )
+            {| Id = 0; DataImages = [] |}
+        |> fun (document, result) ->
+            (document: Document<_>), List.rev result.DataImages
 
     let rawDocument =
         document
