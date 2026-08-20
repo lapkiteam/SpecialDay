@@ -49,51 +49,70 @@ do
         )
 
     let document =
-        let mapPassageBody (passageBody: PassageBody) =
+        let newHtmlImgElement newImageId line =
+            let getImage (htmlElement: HtmlElement) =
+                Option.builder {
+                    do! if htmlElement.Tag <> "img" then None else Some ()
+                    let! _, srcValue =
+                        htmlElement.Attributes
+                        |> HtmlElementAttributes.tryFind "src"
+                    let! dataImage =
+                        match srcValue with
+                        | HtmlElementAttributeValue.DataImage dataImage ->
+                            Some dataImage
+                        | _ -> None
+                    return dataImage
+                }
+
+            let updateSrc imagePath htmlElement =
+                { htmlElement with
+                    Attributes =
+                        htmlElement.Attributes
+                        |> HtmlElementAttributes.set
+                            "src"
+                            (HtmlElementAttributeValue.Raw imagePath)
+                }
+
+            Result.builder {
+                let! htmlElement = HtmlElement.parse line
+                match getImage htmlElement with
+                | None -> return None
+                | Some dataImage ->
+                    let imagePath =
+                        let rawFormat =
+                            DataImageFormat.toString dataImage.Format
+                        $"%d{newImageId}.%s{rawFormat}"
+                    return Some {|
+                        Image = {|
+                            Path = imagePath
+                            Data = dataImage.Data
+                        |}
+                        Element = updateSrc imagePath htmlElement
+                    |}
+            }
+
+        let mapFoldPassageBody (passageBody: PassageBody) =
             passageBody
             |> List.mapFold
-                (fun (state: {| Id: int; DataImages: Map<int, DataImage> |}) line ->
-                    let getImage (htmlElement: HtmlElement) =
-                        Option.builder {
-                            do! if htmlElement.Tag <> "img" then None else Some ()
-                            let! _, srcValue =
-                                htmlElement.Attributes
-                                |> HtmlElementAttributes.tryFind "src"
-                            let! dataImage =
-                                match srcValue with
-                                | HtmlElementAttributeValue.DataImage dataImage ->
-                                    Some dataImage
-                                | _ -> None
-                            return dataImage
-                        }
-                    let newHtmlImgElement =
-                        let updateSrc dataImage htmlElement =
-                            let imagePath =
-                                let rawFormat = DataImageFormat.toString dataImage.Format
-                                $"%d{state.Id}.%s{rawFormat}"
-                            { htmlElement with
-                                Attributes =
-                                    htmlElement.Attributes
-                                    |> HtmlElementAttributes.set
-                                        "src"
-                                        (HtmlElementAttributeValue.Raw imagePath)
-                            }
-                        Result.builder {
-                            let! htmlElement = HtmlElement.parse line
-                            match getImage htmlElement with
-                            | None -> return None
-                            | Some dataImage ->
-                                return Some (updateSrc dataImage htmlElement)
-                        }
-                    state
+                (fun (state: {| Id: int; DataImages: _ list |}) line ->
+                    match newHtmlImgElement state.Id line with
+                    | Ok (Some x) ->
+                        let state =
+                            {| state with
+                                DataImages = x.Image :: state.DataImages
+                                Id = state.Id + 1
+                            |}
+                        let line = HtmlElement.toString x.Element
+                        line, state
+                    | _ -> line, state
                 )
-                {| Id = 0; DataImages = Map.empty |}
+                {| Id = 0; DataImages = [] |}
 
         document
         |> List.map (fun passage ->
             { passage with
                 Body =
-                    mapPassageBody passage.Body
+                    mapFoldPassageBody passage.Body
             }
         )
 
