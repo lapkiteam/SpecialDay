@@ -17,7 +17,7 @@ type DataImageFormat =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module DataImageFormat =
-    open FParsec
+    open FsharpMyExtension.Serialization.Serializers.ShowList
 
     let dic =
         [
@@ -32,15 +32,22 @@ module DataImageFormat =
         |> List.map (fun (k, v) -> v, k)
         |> Map.ofList
 
-    let toString (format: DataImageFormat) =
+    let show (format: DataImageFormat) : ShowS =
         match format with
         | DataImageFormat.Unknown unknownFormat ->
-            unknownFormat
+            showString unknownFormat
         | _ ->
-            Map.tryFind format formatRaws
-            |> Option.defaultWith (fun () ->
-                sprintf "%A?" format
-            )
+            match Map.tryFind format formatRaws with
+            | None ->
+                showByToString format << showChar '?'
+            | Some x ->
+                showString x
+
+    let toString (format: DataImageFormat) =
+        let build = FsharpMyExtension.Serialization.Serializers.ShowList.show
+        build (show format)
+
+    open FParsec
 
     let parser: Parser<_, unit> =
         let pcommon =
@@ -64,6 +71,12 @@ type DataImage = {
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module DataImage =
+    open FsharpMyExtension.Serialization.Serializers.ShowList
+
+    let show (dataImage: DataImage) : ShowS =
+        showString "data:image/" << DataImageFormat.show dataImage.Format
+        << showString ";base64," << showString dataImage.Data
+
     open FParsec
 
     let pimageFormat: Parser<_, unit> =
