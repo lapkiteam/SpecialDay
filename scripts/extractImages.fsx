@@ -42,6 +42,8 @@ module Result =
 
 do
     let input = "src/game.twee"
+    let imagesDir = "images"
+
     let document =
         Document.rawParseFile input
         |> Result.defaultWith (
@@ -85,7 +87,7 @@ do
                     return Some {|
                         Image = {|
                             Path = imagePath
-                            Data = dataImage.Data
+                            Data = dataImage
                         |}
                         Element = updateSrc imagePath htmlElement
                     |}
@@ -123,9 +125,21 @@ do
         |> fun (document, result) ->
             (document: Document<_>), List.rev result.DataImages
 
-    document
-    |> Document.toString
-        PassageBody.shows
-        NewlineType.CrLf
-    |> fun rawDocument ->
-        File.WriteAllText(input, rawDocument)
+    Directory.CreateDirectory imagesDir |> ignore
+    do
+        images
+        |> List.iter (fun image ->
+            let data = System.Convert.FromBase64String image.Data.Data
+            File.WriteAllBytes(
+                $"%s{imagesDir}/%s{image.Path}",
+                data
+            )
+        )
+
+    do
+        document
+        |> Document.toString
+            PassageBody.shows
+            NewlineType.CrLf
+        |> fun rawDocument ->
+            File.WriteAllText(input, rawDocument)
