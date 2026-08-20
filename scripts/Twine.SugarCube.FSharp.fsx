@@ -17,8 +17,6 @@ type DataImageFormat =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module DataImageFormat =
-    open FsharpMyExtension.Serialization.Serializers.ShowList
-
     let dic =
         [
             "webp", DataImageFormat.Webp
@@ -31,6 +29,8 @@ module DataImageFormat =
         dic
         |> List.map (fun (k, v) -> v, k)
         |> Map.ofList
+
+    open FsharpMyExtension.Serialization.Serializers.ShowList
 
     let show (format: DataImageFormat) : ShowS =
         match format with
@@ -108,6 +108,15 @@ type HtmlElementAttributeValue =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module HtmlElementAttributeValue =
+    open FsharpMyExtension.Serialization.Serializers.ShowList
+
+    let show (value: HtmlElementAttributeValue) : ShowS =
+        match value with
+        | HtmlElementAttributeValue.Raw raw ->
+            showString raw
+        | HtmlElementAttributeValue.DataImage dataImage ->
+            DataImage.show dataImage
+
     open FParsec
 
     let praw: Parser<_, unit> =
@@ -129,6 +138,15 @@ type HtmlElementAttribute = (string * HtmlElementAttributeValue)
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module HtmlElementAttribute =
+    open FsharpMyExtension.Serialization.Serializers.ShowList
+
+    let show ((key, value): HtmlElementAttribute) : ShowS =
+        showString key << showChar '='
+        << between
+            (showChar '"')
+            (showChar '"')
+            (HtmlElementAttributeValue.show value)
+
     open FParsec
 
     open ParserCommon
@@ -151,6 +169,13 @@ module HtmlElementAttributes =
             k, if k <> key then v else newvalue
         )
 
+    open FsharpMyExtension.Serialization.Serializers.ShowList
+
+    let show (attributes: HtmlElementAttributes) : ShowS =
+        attributes
+        |> List.map HtmlElementAttribute.show
+        |> joinsEmpty showSpace
+
     open FParsec
 
     let parser: Parser<HtmlElementAttributes, unit> =
@@ -164,6 +189,18 @@ type HtmlElement = {
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module HtmlElement =
+    open FsharpMyExtension.Serialization.Serializers.ShowList
+
+    let show (htmlElement: HtmlElement) : ShowS =
+        between
+            (showChar '<')
+            (showChar '>')
+            (showString htmlElement.Tag << showSpace)
+
+    let toString htmlElement =
+        let build = FsharpMyExtension.Serialization.Serializers.ShowList.show
+        build (show htmlElement)
+
     open FParsec
     open FsharpMyExtension.Serialization.Deserializers.FParsec
 
