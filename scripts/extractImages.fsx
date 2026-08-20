@@ -128,9 +128,27 @@ do
     do
         Directory.CreateDirectory imagesDir |> ignore
 
+        let fixBase64 (str: string) =
+            let remainder = str.Length % 4
+            if remainder <> 0 then
+                str + String.replicate (4 - remainder) "="
+            else
+                str
+
         images
         |> List.iter (fun image ->
-            let data = System.Convert.FromBase64String image.Data.Data
+            let data =
+                try
+                    fixBase64 image.Data.Data
+                    |> System.Convert.FromBase64String
+                with e ->
+                    let path = Path.ChangeExtension(image.Path, ".base64")
+                    File.WriteAllText(
+                        $"%s{imagesDir}/%s{path}",
+                        image.Data.Data
+                    )
+                    failwithf "%s" e.Message
+
             File.WriteAllBytes(
                 $"%s{imagesDir}/%s{image.Path}",
                 data
