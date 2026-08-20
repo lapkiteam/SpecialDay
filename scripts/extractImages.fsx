@@ -125,8 +125,9 @@ do
         |> fun (document, result) ->
             (document: Document<_>), List.rev result.DataImages
 
-    Directory.CreateDirectory imagesDir |> ignore
     do
+        Directory.CreateDirectory imagesDir |> ignore
+
         images
         |> List.iter (fun image ->
             let data = System.Convert.FromBase64String image.Data.Data
