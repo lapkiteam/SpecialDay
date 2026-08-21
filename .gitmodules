@@ -1,3 +1,6 @@
 [submodule "scripts/lib/ImageMagick.FSharp"]
 	path = scripts/lib/ImageMagick.FSharp
 	url = https://github.com/gretmn102/ImageMagick.FSharp.git
+[submodule "scripts/lib/DeployImages"]
+	path = scripts/lib/DeployImages
+	url = https://github.com/lapkiteam/DeployImages.git
