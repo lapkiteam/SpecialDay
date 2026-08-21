@@ -8,4 +8,5 @@
     Dry = false
     InputFormats = fun ext -> ext = ".png" || ext = ".jpeg"
     OutputFormat = "webp"
+    Quality = Some 92
 }
