@@ -1,7 +1,10 @@
 #!dotnet fsi
 #load "lib/ImageMagick.FSharp/src/Api.fsx"
+#load "lib/DeployImages/src/script.fsx"
 
-"src/images"
+let imagesPath = "src/images"
+
+imagesPath
 |> Api.convertFolder {
     OutputDirectory = Some "public/images"
     FitSize = None
@@ -10,3 +13,6 @@
     OutputFormat = "webp"
     Quality = Some 92
 }
+
+Script.Images.fromDir imagesPath
+|> Script.Images.removePngIfHasClip
