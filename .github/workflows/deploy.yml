@@ -1,0 +1,148 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    # Review gh actions docs if you want to further define triggers, paths, etc
+    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tweego
+        run: |
+          curl -L -O \
+            https://github.com/tmedwards/tweego/releases/download/v2.1.1/tweego-2.1.1-linux-x64.zip
+          tweego_zipfile=tweego-2.1.1-linux-x64.zip
+          tweego_dir=/usr/local/bin/tweego-2.1.1-linux-x64
+          mkdir "$tweego_dir"
+          unzip -o "$tweego_zipfile" -d "$tweego_dir"
+          rm "$tweego_zipfile"
+          chmod +x $tweego_dir/tweego
+
+          echo Start $tweego_dir/tweego --version...
+          # запуск через $(), потому что tweego возвращает 1 код ошибку
+          # из-за чего workflow останавливается
+          echo $($tweego_dir/tweego --version)
+
+          tweego_script_path=/usr/local/bin/tweego
+          echo create $tweego_script_path script
+          cat > $tweego_script_path << EOF
+          #!/usr/bin/env bash
+
+          $tweego_dir/tweego "\$@"
+          EOF
+          chmod +x $tweego_script_path
+
+          echo Start tweego --version...
+          # запуск через $(), потому что tweego возвращает 1 код ошибку
+          # из-за чего workflow останавливается
+          echo $(tweego --version)
+
+          echo update SugarCube to v2.37.3
+          curl -L -O \
+            https://www.motoslave.net/sugarcube/download.php/2/sugarcube-2.37.3-for-twine-2.1-local.zip
+          sugarcube_path=sugarcube-2.37.3-for-twine-2.1-local.zip
+          sugarcube_dir="$tweego_dir/storyformats/sugarcube-2"
+          rm -rf "$sugarcube_dir"
+          mkdir "$sugarcube_dir"
+          unzip -qq -o "$sugarcube_path" -d "$sugarcube_dir/.."
+          rm "$sugarcube_path"
+
+      - name: Build
+        run: |
+          mkdir -p dist
+          tweego -m src/scripts -o dist/index.html src/game.twee
+
+      - name: Add Social Card
+        run: |
+          set -euo pipefail
+
+          META=$(cat << EOF
+          <!-- HTML Meta Tags -->
+          <title>Особый день</title>
+          <meta name="description" content="Игра в честь ДР Туатары, 2026г">
+
+          <!-- Facebook Meta Tags -->
+          <meta property="og:url" content="https://github.com/lapkiteam/SpecialDay">
+          <meta property="og:type" content="website">
+          <meta property="og:title" content="Особый день">
+          <meta property="og:description" content="Игра в честь ДР Туатары, 2026г">
+
+          <!-- Twitter Meta Tags -->
+          <meta name="twitter:card" content="summary_large_image">
+          <meta property="twitter:domain" content="lapkiteam.github.io">
+          <meta property="twitter:url" content="https://github.com/lapkiteam/SpecialDay">
+          <meta name="twitter:title" content="Особый день">
+          <meta name="twitter:description" content="Игра в честь ДР Туатары, 2026г">
+          EOF
+          )
+
+          # if [[ $# -eq 0 ]]; then
+          #   echo "Path to HTML is not specified."
+          #   exit 1
+          # fi
+
+          # HTML_FILE="$1"
+          HTML_FILE="dist/index.html"
+
+          if [[ ! -f "$HTML_FILE" ]]; then
+            echo "File $HTML_FILE not found."
+            exit 1
+          fi
+
+          NODE='<meta charset="UTF-8" />'
+          echo "Finding '$NODE'"...
+
+          NODE_POSITION=$(grep -m 1 -n -i "$NODE" "$HTML_FILE" | cut -d: -f1)
+          if [[ -z "$NODE_POSITION" ]]; then
+            echo "Tag "$NODE" not founded in $HTML_FILE."
+            exit 1
+          fi
+          NODE_POSITION=$(($NODE_POSITION + 1))
+
+          echo Adding metadata to HTML file...
+
+          awk -v meta="$META" -v line="$NODE_POSITION" '
+            NR == line { print meta }
+            { print }
+          ' "$HTML_FILE" > "${HTML_FILE}.tmp" && mv "${HTML_FILE}.tmp" "$HTML_FILE"
+
+          echo "Metadata added in $HTML_FILE."
+
+      - name: Copy public
+        run: cp -r public/* dist
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Build Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
