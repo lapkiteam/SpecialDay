@@ -254,6 +254,4 @@ Macro.add("image", {
 
 
 :: Ура Ура Ура {"position":"800,2600","size":"100,100"}
-<div class="image-container">\
-  <img class="image-container__image" src="images/5.webp">\
-</div>\
+<<image "images/5.webp">><</image>>
