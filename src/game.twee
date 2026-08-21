@@ -44,10 +44,11 @@ Macro.add("image", {
       for (let payloadsIndex = 0; payloadsIndex < payloadsLength; ++payloadsIndex) {
         const ctx = this.payload[payloadsIndex] // https://www.motoslave.net/sugarcube/2/docs/#macrocontext-api
         const [link] = ctx.args
-        jQuery(this.output).wiki(`<div class="image-container">
-          <img class="image-container__image" src="${escape(link)}">
-        </div>`);
-
+        jQuery(this.output).wiki(
+          `<div class="image-container">
+            <img class="image-container__image" src="${escape(link)}">
+          </div>`
+        );
       }
     }
     catch (ex) {
@@ -253,4 +254,4 @@ Macro.add("image", {
 
 
 :: Ура Ура Ура {"position":"800,2600","size":"100,100"}
-<<image "images/5.webp">><</image>>
+<<image "images/5.webp" />>
