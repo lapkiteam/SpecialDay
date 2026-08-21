@@ -45,8 +45,8 @@ Macro.add("image", {
     try {
       const [link] = this.args
       jQuery(this.output).wiki(
-        `<div class="image-container">
-          <img class="image-container__image" src="${escape(link)}">
+        `<div class="image-container">\\
+          <img class="image-container__image" src="${escape(link)}">\\
         </div>`
       );
     }
