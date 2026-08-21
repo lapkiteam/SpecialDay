@@ -15,7 +15,6 @@ Osobyj denʹ
 :: StoryStylesheet [stylesheet]
 .image-container {
   display: flex;
-  /* max-width: 300px; */
   max-height: 350px;
 }
 .image-container__image {
