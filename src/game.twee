@@ -20,6 +20,7 @@ SpecialDay
 .image-container {
   display: flex;
   max-height: 350px;
+  justify-content: center;
 }
 .image-container__image {
   overflow: auto;
