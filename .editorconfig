@@ -12,3 +12,6 @@ insert_final_newline = true
 
 [*.{md,twee}]
 indent_size = 2
+
+[*.{fs,fsx}]
+indent_size = 4
